@@ -1,5 +1,6 @@
 import * as authService from "./auth.service.js";
 import ApiResponse from "../../common/utils/api-response.js";
+import cookies from 'cookie-parser';
 
 const register = async(req, res) => {
     const user = await authService.register(req.body);
@@ -25,4 +26,15 @@ const login = async (req, res) => {
     ApiResponse.ok(res, "Logged-in Successfully !", { user, accessToken });
 }
 
-export {register, login, verifyEmail};
+const refreshToken = async(req, res) => {
+    const token = req.cookies?.refreshToken;
+    const {accessToken} = await authService.refreshToken(token);
+    ApiResponse.ok(res, "Token refreshed", { accessToken });
+}
+
+const profile = async(req, res) => {
+    const user = await authService.profile(req.user.id);
+    ApiResponse.ok(res, "User fetched Successfully !", user)
+}
+
+export {register, login, verifyEmail, profile, refreshToken};

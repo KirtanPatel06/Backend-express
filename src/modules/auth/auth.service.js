@@ -4,7 +4,7 @@ import * as tokens from '../../common/utils/jwt-utils.js';
 import * as mail from '../../common/config/email.js';
 import crypto from 'crypto';
 
-const hashToken = async(token) => {
+const hashToken = (token) => {
     return crypto.createHash("sha256").update(token).digest('hex');
 }
 
@@ -92,4 +92,29 @@ const login = async ({ email, password }) => {
     return {user: userObj, accessToken, refreshToken};
 }
 
-export {register, login, verifyEmail};
+const refreshToken = async(token) => {
+    if(!token)
+        return ApiError.unAuthorized("Refresh token missing !");
+
+    // Very IMP to verify the token
+    const decoded = tokens.verifyRefreshToken(token);
+    const user = await User.findById(decoded.id).select("+refreshToken");
+    if(!user)
+        throw ApiError.notFound("User not found !");
+
+    if(user.refreshToken !== hashToken(token))
+        throw ApiError.unAuthorized("Invalid refresh Token, please login again !");
+
+    const accessToken = tokens.generateAccessToken({id: user._id, role: user.role});
+    console.log(accessToken);
+    return {accessToken};
+}
+
+const profile = async(userId) => {
+    const user = User.findById(userId);
+    if(!user)
+        throw ApiError.notFound("User not found!");
+
+    return user;
+}
+export {register, login, verifyEmail, profile, refreshToken};
